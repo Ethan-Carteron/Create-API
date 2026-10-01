@@ -12,31 +12,29 @@ use App\State\City\CityCollectionProvider;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Component\Uid\Uuid;
 
-#[ApiResource(
-    operations: [
-        new GetCollection(
-            uriTemplate: '/cities',
-            paginationEnabled: false,
-            output: CityListOutput::class,
-            provider: CityCollectionProvider::class,
-            parameters: [
-                'q' => new QueryParameter(
-                    schema: ['type'=>'string'],
-                    description: 'Filtre textuel sur le nom de la ville insensible à la casse et aux accents',
-                ),
-                'limit' => new QueryParameter(
-                    schema: [
-                        'type' => 'integer',
-                        'minimum' => 1,
-                        'maximum' => 100,
-                        'default' => 20,
-                    ],
-                    description: 'Nombre maximum de villes retournées.',
-                ),
-            ]
-        )
-    ]
-)]
+#[ApiResource(operations: [
+    new GetCollection(
+        uriTemplate: '/cities',
+        paginationEnabled: false,
+        output: CityListOutput::class,
+        provider: CityCollectionProvider::class,
+        parameters: [
+            'q' => new QueryParameter(
+                schema: ['type'=>'string'],
+                description: 'Filtre textuel sur le nom de la ville insensible à la casse et aux accents',
+            ),
+            'limit' => new QueryParameter(
+                schema: [
+                    'type' => 'integer',
+                    'minimum' => 1,
+                    'maximum' => 100,
+                    'default' => 20,
+                ],
+                description: 'Nombre maximum de villes retournées.',
+            ),
+        ]
+    )
+])]
 #[ORM\Entity(repositoryClass: CityRepository::class)]
 class City extends AbstractEntity
 {
