@@ -10,67 +10,49 @@ use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 
 class AppFixtures extends Fixture
 {
-private const string PLAIN_PASSWORD = 'password';
-    public function __construct
-    (
-        private readonly UserPasswordHasherInterface $passwordHash,
-    )
-    {}
+    // le hacheur n'est pas construit ici, il est demandé au conteneur
+    public function __construct(
+        private readonly UserPasswordHasherInterface $hasher,
+    ) {
+    }
 
+    /**
+     * Loads the three demo accounts and the ten cities of the network.
+     */
     public function load(ObjectManager $manager): void
     {
-        #region users
-        $aliceUser = new User();
-        $aliceUser
-            ->setEmail('alice@example.fr')
-            ->setCreatedAt(new \DateTimeImmutable());
-        $password = $this->passwordHash->hashPassword($aliceUser, self::PLAIN_PASSWORD);
-        $aliceUser->setPassword($password);
+        $now = new \DateTimeImmutable();
 
-        $bobUser = new User();
-        $bobUser
-            ->setEmail('bob@example.fr')
-            ->setCreatedAt(new \DateTimeImmutable());
-        $password = $this->passwordHash->hashPassword($bobUser, self::PLAIN_PASSWORD);
-        $bobUser->setPassword($password);
+        // Alice et Bob n'ont ni prénom ni nom : les deux champs sont optionnels
+        foreach (['alice@example.fr', 'bob@example.fr'] as $email) {
+            $user = new User();
+            $user->setEmail($email);
+            $user->setPassword($this->hasher->hashPassword($user, 'motdepasse'));
+            $user->setCreatedAt($now);
+            $manager->persist($user);
+        }
 
-        $camilleUser = new User();
-        $camilleUser
-            ->setEmail('camille.aubert@example.fr')
-            ->setFirstName('Camille')
-            ->setLastName('Aubert')
-            ->setCreatedAt(new \DateTimeImmutable('2026-02-04'));
-        $password = $this->passwordHash->hashPassword($camilleUser, self::PLAIN_PASSWORD);
-        $camilleUser->setPassword($password);
+        // Camille porte la parité avec les maquettes du module de conception
+        $camille = new User();
+        $camille->setEmail('camille.aubert@example.fr');
+        $camille->setPassword($this->hasher->hashPassword($camille, 'motdepasse'));
+        $camille->setFirstName('Camille');
+        $camille->setLastName('Aubert');
+        $camille->setCreatedAt(new \DateTimeImmutable('2026-02-04'));
+        $manager->persist($camille);
 
-        $manager->persist($aliceUser);
-        $manager->persist($bobUser);
-        $manager->persist($camilleUser);
-        #endregion
-
-        #region cities
-        $cities = [
-            'Paris',
-            'Lyon',
-            'Marseille',
-            'Bordeaux',
-            'Lille',
-            'Strasbourg',
-            'Toulouse',
-            'Nantes',
-            'Dijon',
-            'Brest'
+        // les dix villes du réseau, liste fermée par le lore du module de conception
+        $cityNames = [
+            'Paris', 'Lyon', 'Marseille', 'Bordeaux', 'Lille',
+            'Strasbourg', 'Toulouse', 'Nantes', 'Dijon', 'Brest',
         ];
 
-        foreach ($cities as $cityName)
-        {
+        foreach ($cityNames as $name) {
             $city = new City();
-            $city
-                ->setName($cityName)
-                ->setCreatedAt(new \DateTimeImmutable());
+            $city->setName($name);
+            $city->setCreatedAt($now);
             $manager->persist($city);
         }
-        #endregion
 
         $manager->flush();
     }

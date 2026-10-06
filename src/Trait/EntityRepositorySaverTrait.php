@@ -4,13 +4,19 @@ namespace App\Trait;
 
 trait EntityRepositorySaverTrait
 {
-    public function persist (object $entity): void
+    /**
+     * Schedules an entity for insertion or update at the next flush.
+     */
+    public function persist(object $entity): void
     {
-        $this->getEntityManager->persist($entity);
+        $this->getEntityManager()->persist($entity);
     }
 
-    public function flush (): void
+    /**
+     * Writes every scheduled change to the database.
+     */
+    public function flush(): void
     {
-        $this->getEntityManager->flush();
+        $this->getEntityManager()->flush();
     }
 }

@@ -3,10 +3,15 @@
 namespace App\Entity;
 
 use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
 use ApiPlatform\Metadata\Post;
+use ApiPlatform\OpenApi\Model\Operation as OpenApiOperation;
+use App\Dto\User\UserDetailsOutput;
 use App\Dto\User\UserRegisterInput;
 use App\Entity\Impl\AbstractEntity;
 use App\Repository\UserRepository;
+use App\State\User\UserMeProvider;
+use App\State\User\UserRegisterProcessor;
 use Doctrine\ORM\Mapping as ORM;
 use Symfony\Bridge\Doctrine\Types\UuidType;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;
@@ -20,6 +25,17 @@ use Symfony\Component\Uid\Uuid;
     new Post(
         uriTemplate: '/auth/register',
         input: UserRegisterInput::class,
+        output: UserDetailsOutput::class,
+        processor: UserRegisterProcessor::class,
+        // on ouvre un compte sans en avoir un : le contrat déclare l'opération publique
+        openapi: new OpenApiOperation(security: []),
+    ),
+    new Get(
+        uriTemplate: '/users/me',
+        uriVariables: [],
+        output: UserDetailsOutput::class,
+        provider: UserMeProvider::class,
+        security: "is_granted('ROLE_USER')",
     ),
 ])]
 class User extends AbstractEntity implements UserInterface, PasswordAuthenticatedUserInterface
@@ -38,7 +54,7 @@ class User extends AbstractEntity implements UserInterface, PasswordAuthenticate
     private array $roles = [];
 
     /**
-     * @var string|null The hashed password
+     * @var string The hashed password
      */
     #[ORM\Column]
     private ?string $password = null;

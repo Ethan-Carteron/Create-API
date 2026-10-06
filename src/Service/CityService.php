@@ -4,36 +4,66 @@ namespace App\Service;
 
 use App\Dto\City\CityListOutput;
 use App\Entity\City;
+use App\Exception\City\CityNotFoundException;
 use App\Repository\CityRepository;
+use Symfony\Component\Uid\Uuid;
 
 class CityService
 {
-    private const int MAX_RESULT = 100;
-    public const int DEFAULT_LIMIT = 20;
+    public const DEFAULT_LIMIT = 20;
+    public const MAX_LIMIT = 100;
 
-    public function __construct
-    (
+    // le repository n'est pas construit ici, il est demandé au conteneur
+    public function __construct(
         private readonly CityRepository $cityRepository,
-    )
-    {
+    ) {
     }
 
-    public function searchByName(?string $query = null, ?int $limit = null): array
+    /**
+     * Searches cities by name, with a safe upper bound on the result count.
+     *
+     * A blank filter is treated as no filter at all.
+     *
+     * @return City[]
+     */
+    public function search(?string $q, ?int $limit): array
     {
-        if (trim($query) === '') {
-            $query = null;
+        $pattern = null === $q ? null : trim($q);
+        if ('' === $pattern) {
+            $pattern = null;
         }
 
-        $limit = min(self::MAX_RESULT, max(1, $limit ?? self::DEFAULT_LIMIT));
+        // programmation défensive : un service de domaine ne présume pas que son appelant a validé
+        $boundedLimit = min(self::MAX_LIMIT, max(1, $limit ?? self::DEFAULT_LIMIT));
 
-        return $this->cityRepository->searchByName($query, $limit);
+        return $this->cityRepository->search($pattern, $boundedLimit);
     }
 
-    public function toList(?City $city = null): CityListOutput
+    /**
+     * Maps a city onto the payload served by the collection endpoint.
+     */
+    public function toList(City $city): CityListOutput
     {
         return new CityListOutput(
             id: $city->getId(),
             name: $city->getName(),
         );
+    }
+
+    /**
+     * Returns the city carrying this identifier.
+     *
+     * @throws CityNotFoundException when no city carries this identifier
+     */
+    public function findOneById(Uuid $id): City
+    {
+        // find() est héritée de Doctrine : rien à écrire dans le repository pour un accès par clé
+        $city = $this->cityRepository->find($id);
+
+        if (null === $city) {
+            throw new CityNotFoundException();
+        }
+
+        return $city;
     }
 }

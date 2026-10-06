@@ -16,17 +16,22 @@ class CityRepository extends ServiceEntityRepository
         parent::__construct($registry, City::class);
     }
 
-    public function searchByName(?string $query = null, ?int $limit = 20): array
+    /**
+     * Returns cities ordered by name, optionally filtered on a case-insensitive substring.
+     *
+     * @return City[]
+     */
+    public function search(?string $q, int $limit): array
     {
         $qb = $this->createQueryBuilder('c')
             ->orderBy('c.name', 'ASC')
             ->setMaxResults($limit);
 
-        if ($query)
-        {
-            $qb->where('LOWER(c.name) LIKE  LOWER(:query)')
-                ->setParameter('query', '%' . $query . '%');
+        if (null !== $q) {
+            $qb->andWhere('LOWER(c.name) LIKE LOWER(:pattern)')
+                ->setParameter('pattern', '%'.$q.'%');
         }
+
         return $qb->getQuery()->getResult();
     }
 }
